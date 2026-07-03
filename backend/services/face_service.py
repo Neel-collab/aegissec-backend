@@ -23,25 +23,14 @@ def extract_face_embedding(image_base64: str) -> Optional[list]:
         
         if img is None: return None
 
-        # Convert to grayscale for face detection
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        
-        # Load Haar Cascade
-        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
-        faces = face_cascade.detectMultiScale(gray, 1.1, 4)
-
-        if len(faces) == 0:
-            # Fallback if Haar Cascade fails due to lighting/angle: use center 60% of image
-            h_img, w_img = img.shape[:2]
-            cx, cy = w_img // 2, h_img // 2
-            crop_w, crop_h = int(w_img * 0.6), int(h_img * 0.6)
-            x_pos = cx - crop_w // 2
-            y_pos = cy - crop_h // 2
-            face_crop = img[y_pos:y_pos+crop_h, x_pos:x_pos+crop_w]
-        else:
-            # Crop to the first detected face
-            x, y, w, h = faces[0]
-            face_crop = img[y:y+h, x:x+w]
+        # For extreme cloud-free-tier compatibility, we bypass heavy Face Detectors.
+        # We take a 60% center crop of the image (where the user's face is naturally positioned)
+        h_img, w_img = img.shape[:2]
+        cx, cy = w_img // 2, h_img // 2
+        crop_w, crop_h = int(w_img * 0.6), int(h_img * 0.6)
+        x_pos = cx - crop_w // 2
+        y_pos = cy - crop_h // 2
+        face_crop = img[y_pos:y_pos+crop_h, x_pos:x_pos+crop_w]
 
         # Convert to HSV for better color histogram comparison
         hsv_face = cv2.cvtColor(face_crop, cv2.COLOR_BGR2HSV)
