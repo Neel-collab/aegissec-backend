@@ -38,8 +38,8 @@ def extract_face_embedding(image_base64: str) -> Optional[list]:
 
         result = DeepFace.represent(
             img_path=tmp_path,
-            model_name="ArcFace",
-            detector_backend="mtcnn",
+            model_name="Facenet",
+            detector_backend="opencv",
             enforce_detection=True,
         )
 
@@ -71,9 +71,9 @@ def verify_face(image_base64: str, stored_embedding: list) -> tuple[bool, float]
         similarity = _cosine_similarity(new_embedding, stored_embedding)
         distance = 1.0 - similarity
         
-        # ArcFace exact cosine distance threshold is 0.687
-        # For '110% accuracy' (strict mode), we can tighten it to 0.60
-        threshold = 0.60
+        # Facenet exact cosine distance threshold is 0.40
+        # For '110% accuracy' (strict mode), we can tighten it to 0.35
+        threshold = 0.35
         is_match = distance <= threshold
         
         # Convert similarity to a 0-100% score based on the threshold
