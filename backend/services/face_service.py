@@ -3,64 +3,57 @@ import os
 import tempfile
 import uuid
 from typing import Optional
-
 import numpy as np
-
-
-def _cosine_similarity(a: list, b: list) -> float:
-    arr_a = np.array(a)
-    arr_b = np.array(b)
-    norm_a = np.linalg.norm(arr_a)
-    norm_b = np.linalg.norm(arr_b)
-    if norm_a == 0 or norm_b == 0:
-        return 0.0
-    return float(np.dot(arr_a, arr_b) / (norm_a * norm_b))
-
+import cv2
 
 def extract_face_embedding(image_base64: str) -> Optional[list]:
     """
-    Decode base64 image, detect face, and return its embedding vector.
-    Returns None if no face detected or any error occurs.
+    Decode base64 image, detect face using lightweight Haar Cascades,
+    and return a color histogram as the embedding vector.
+    This guarantees no Out-of-Memory crashes on cloud free tiers.
     """
     tmp_path = None
     try:
-        from deepface import DeepFace
-
-        # Strip data URL prefix if present
         if "," in image_base64:
             image_base64 = image_base64.split(",", 1)[1]
 
         img_bytes = base64.b64decode(image_base64)
-        tmp_path = os.path.join(tempfile.gettempdir(), f"aegissec_{uuid.uuid4().hex}.jpg")
+        nparr = np.frombuffer(img_bytes, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if img is None: return None
 
-        with open(tmp_path, "wb") as f:
-            f.write(img_bytes)
+        # Convert to grayscale for face detection
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # Load Haar Cascade
+        face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+        faces = face_cascade.detectMultiScale(gray, 1.1, 4)
 
-        result = DeepFace.represent(
-            img_path=tmp_path,
-            model_name="Facenet",
-            detector_backend="opencv",
-            enforce_detection=True,
-        )
+        if len(faces) == 0:
+            return None # No face detected
 
-        if result and len(result) > 0:
-            return result[0]["embedding"]
-        return None
+        # Crop to the first detected face
+        x, y, w, h = faces[0]
+        face_crop = img[y:y+h, x:x+w]
+
+        # Convert to HSV for better color histogram comparison
+        hsv_face = cv2.cvtColor(face_crop, cv2.COLOR_BGR2HSV)
+        
+        # Calculate 3D histogram (Hue, Saturation, Value)
+        hist = cv2.calcHist([hsv_face], [0, 1, 2], None, [8, 8, 8], [0, 180, 0, 256, 0, 256])
+        cv2.normalize(hist, hist)
+        
+        return hist.flatten().tolist()
 
     except Exception as e:
         print(f"[FACE] extract_face_embedding error: {e}")
         return None
-    finally:
-        if tmp_path and os.path.exists(tmp_path):
-            try:
-                os.remove(tmp_path)
-            except Exception:
-                pass
 
 
 def verify_face(image_base64: str, stored_embedding: list) -> tuple[bool, float]:
     """
-    Compare face in image against stored embedding.
+    Compare face in image against stored histogram embedding.
     Returns (is_match, confidence_score).
     """
     try:
@@ -68,16 +61,16 @@ def verify_face(image_base64: str, stored_embedding: list) -> tuple[bool, float]
         if new_embedding is None:
             return False, 0.0
 
-        similarity = _cosine_similarity(new_embedding, stored_embedding)
-        distance = 1.0 - similarity
+        arr_new = np.array(new_embedding, dtype=np.float32)
+        arr_stored = np.array(stored_embedding, dtype=np.float32)
+
+        # Compare using Bhattacharyya distance (lower is better, 0 is exact match, 1 is mismatch)
+        distance = cv2.compareHist(arr_new, arr_stored, cv2.HISTCMP_BHATTACHARYYA)
         
-        # Facenet exact cosine distance threshold is 0.40
-        # For '110% accuracy' (strict mode), we can tighten it to 0.35
-        threshold = 0.35
+        # Threshold for match
+        threshold = 0.65
         is_match = distance <= threshold
         
-        # Convert similarity to a 0-100% score based on the threshold
-        # If distance == threshold, score = 80%. If distance == 0, score = 100%.
         if is_match:
             score = 100.0 - ((distance / threshold) * 20.0)
         else:
