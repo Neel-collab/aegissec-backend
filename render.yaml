@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: aegissec-api
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: MONGODB_URL
+        value: mongodb+srv://neelsahilpoddar_db_user:neel1234@aegissec.or6leoc.mongodb.net/?appName=aegissec
+      - key: DATABASE_NAME
+        value: aegissec
+      - key: JWT_SECRET
+        value: AegisSec_SuperSecret_JWT_Key_2024_Change_In_Prod!
+      - key: ALGORITHM
+        value: HS256
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        value: neelsahil.poddar@bcah.christuniversity.in
+      - key: SMTP_PASSWORD
+        value: oirndghmycgvpylu
+      - key: FRONTEND_URL
+        value: https://frontend-seven-roan-90.vercel.app

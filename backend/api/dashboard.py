@@ -1,0 +1,75 @@
+from fastapi import APIRouter
+from db.mongodb import get_db
+from datetime import datetime, timedelta
+
+router = APIRouter()
+
+
+@router.get("/stats")
+async def get_dashboard_stats():
+    db = get_db()
+
+    total_threats = await db["threats"].count_documents({})
+    active_threats = await db["threats"].count_documents({"status": "Active"})
+    open_incidents = await db["incidents"].count_documents({"status": "Open"})
+    critical_incidents = await db["incidents"].count_documents({"severity": "Critical", "status": {"$ne": "Resolved"}})
+    total_assets = await db["assets"].count_documents({})
+
+    # Risk score: average of top 10 threat risk scores
+    pipeline = [{"$sort": {"risk_score": -1}}, {"$limit": 10}, {"$group": {"_id": None, "avg": {"$avg": "$risk_score"}}}]
+    risk_result = await db["threats"].aggregate(pipeline).to_list(1)
+    risk_score = int(risk_result[0]["avg"]) if risk_result else 0
+
+    # Threats by type
+    threats_by_type = {}
+    for t in ["DDoS", "Phishing", "Malware", "BruteForce", "PortScan", "Ransomware", "SQLInjection"]:
+        threats_by_type[t] = await db["threats"].count_documents({"threat_type": t})
+
+    # Threats by severity
+    threats_by_severity = {}
+    for s in ["Critical", "High", "Medium", "Low"]:
+        threats_by_severity[s] = await db["threats"].count_documents({"severity": s})
+
+    # Incidents by status
+    incidents_by_status = {}
+    for s in ["Open", "In Progress", "Resolved"]:
+        incidents_by_status[s] = await db["incidents"].count_documents({"status": s})
+
+    # Compliance score average
+    frameworks = await db["compliance"].find().to_list(10)
+    compliance_score = round(sum(f.get("score", 0) for f in frameworks) / len(frameworks), 1) if frameworks else 0
+
+    # Recent threats (last 5)
+    recent_cursor = db["threats"].find().sort("detected_at", -1).limit(5)
+    recent_threats_raw = await recent_cursor.to_list(5)
+    recent_threats = [
+        {
+            "id": t["id"], "title": t["title"], "severity": t["severity"],
+            "threat_type": t["threat_type"], "detected_at": t["detected_at"].isoformat(),
+            "risk_score": t.get("risk_score", 0), "status": t.get("status", "Active")
+        }
+        for t in recent_threats_raw
+    ]
+
+    # Threat timeline: last 7 days
+    threat_timeline = []
+    for i in range(6, -1, -1):
+        day_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=i)
+        day_end = day_start + timedelta(days=1)
+        count = await db["threats"].count_documents({"detected_at": {"$gte": day_start, "$lt": day_end}})
+        threat_timeline.append({"date": day_start.strftime("%b %d"), "count": count})
+
+    return {
+        "total_threats": total_threats,
+        "active_threats": active_threats,
+        "open_incidents": open_incidents,
+        "critical_incidents": critical_incidents,
+        "total_assets": total_assets,
+        "risk_score": risk_score,
+        "threats_by_type": threats_by_type,
+        "threats_by_severity": threats_by_severity,
+        "incidents_by_status": incidents_by_status,
+        "compliance_score": compliance_score,
+        "recent_threats": recent_threats,
+        "threat_timeline": threat_timeline,
+    }
