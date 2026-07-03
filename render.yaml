@@ -7,6 +7,8 @@ services:
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     plan: free
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
       - key: MONGODB_URL
         value: mongodb+srv://neelsahilpoddar_db_user:neel1234@aegissec.or6leoc.mongodb.net/?appName=aegissec
       - key: DATABASE_NAME
