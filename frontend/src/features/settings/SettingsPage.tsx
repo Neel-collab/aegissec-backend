@@ -134,7 +134,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-6">
       {/* Notifications */}
       {notifSuccess && (
         <div className="flex items-center gap-3 p-4 rounded-xl border border-green-500/20 bg-green-500/10 text-green-500 text-sm">

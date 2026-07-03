@@ -79,7 +79,7 @@ export default function ThreatsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
+      <div className="p-4 md:p-8 space-y-6">
         <div className="h-10 w-48 bg-secondary/50 rounded-xl animate-pulse" />
         <div className="h-[400px] w-full bg-secondary/50 rounded-xl animate-pulse" />
       </div>
@@ -88,7 +88,7 @@ export default function ThreatsPage() {
 
   if (error) {
     return (
-      <div className="p-8 text-center text-destructive">
+      <div className="p-4 md:p-8 text-center text-destructive">
         <AlertTriangle size={48} className="mx-auto mb-4" />
         <p className="font-semibold text-lg">Failed to load threat detection data.</p>
         <p className="text-sm opacity-70 mt-1">Please ensure the backend server and MongoDB are running.</p>
@@ -97,7 +97,7 @@ export default function ThreatsPage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-6">
       {/* Tab Switcher */}
       <div className="flex border-b border-border gap-6">
         <button onClick={() => setActiveTab('feed')}

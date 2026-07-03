@@ -16,7 +16,7 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
+      <div className="p-4 md:p-8 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 animate-pulse">
           {[1, 2, 3, 4].map(n => (
             <div key={n} className="h-32 rounded-xl bg-secondary/50 border border-border" />
@@ -32,7 +32,7 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="p-8 text-center text-destructive">
+      <div className="p-4 md:p-8 text-center text-destructive">
         <AlertTriangle size={48} className="mx-auto mb-4" />
         <p className="font-semibold text-lg">Failed to load dashboard statistics.</p>
         <p className="text-sm opacity-70 mt-1">Please ensure the backend server and MongoDB are running.</p>
@@ -67,9 +67,9 @@ export default function DashboardPage() {
   const COLORS = ['#ef4444', '#f97316', '#eab308', '#3b82f6', '#8b5cf6', '#ec4899', '#10b981']
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-6">
       {/* Stat Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {statCards.map((card, idx) => (
           <motion.div key={card.title} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}
             className="p-6 rounded-xl border border-border bg-card/40 backdrop-blur-sm flex items-center justify-between group hover:border-primary/40 transition-colors">

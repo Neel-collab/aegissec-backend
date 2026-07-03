@@ -86,7 +86,7 @@ export default function AssetsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
+      <div className="p-4 md:p-8 space-y-6">
         <div className="grid grid-cols-4 gap-6 animate-pulse">
           {[1,2,3,4].map(n => <div key={n} className="h-24 rounded-xl bg-secondary/50" />)}
         </div>
@@ -97,7 +97,7 @@ export default function AssetsPage() {
 
   if (error) {
     return (
-      <div className="p-8 text-center text-destructive">
+      <div className="p-4 md:p-8 text-center text-destructive">
         <AlertTriangle size={48} className="mx-auto mb-4" />
         <p className="font-semibold text-lg">Failed to load asset inventory.</p>
         <p className="text-sm opacity-70 mt-1">Please ensure the backend server and MongoDB are running.</p>
@@ -106,7 +106,7 @@ export default function AssetsPage() {
   }
 
   return (
-    <div className="p-8 space-y-6 relative h-full">
+    <div className="p-4 md:p-8 space-y-6 relative h-full">
       {/* Metric Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

@@ -45,7 +45,7 @@ export default function CompliancePage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
+      <div className="p-4 md:p-8 space-y-6">
         <div className="grid grid-cols-3 gap-6 animate-pulse">
           {[1,2,3].map(n => <div key={n} className="h-40 rounded-xl bg-secondary/50" />)}
         </div>
@@ -56,7 +56,7 @@ export default function CompliancePage() {
 
   if (error) {
     return (
-      <div className="p-8 text-center text-destructive">
+      <div className="p-4 md:p-8 text-center text-destructive">
         <AlertTriangle size={48} className="mx-auto mb-4" />
         <p className="font-semibold text-lg">Failed to load compliance frameworks.</p>
         <p className="text-sm opacity-70 mt-1">Please ensure the backend server and MongoDB are running.</p>
@@ -70,7 +70,7 @@ export default function CompliancePage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-6">
       {/* Framework Summary Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {frameworks.map((fw: any) => {

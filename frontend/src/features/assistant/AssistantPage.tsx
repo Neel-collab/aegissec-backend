@@ -56,7 +56,7 @@ export default function AssistantPage() {
   ]
 
   return (
-    <div className="p-8 h-[calc(100vh-4rem)] flex flex-col justify-between gap-6">
+    <div className="p-4 md:p-8 h-[calc(100vh-4rem)] flex flex-col justify-between gap-6">
       {/* Suggestions Row */}
       <div className="flex flex-wrap gap-2">
         {suggestions.map(s => (

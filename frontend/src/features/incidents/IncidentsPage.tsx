@@ -77,7 +77,7 @@ export default function IncidentsPage() {
 
   if (isLoading) {
     return (
-      <div className="p-8 space-y-6">
+      <div className="p-4 md:p-8 space-y-6">
         <div className="h-10 w-full bg-secondary/50 rounded-xl animate-pulse" />
         <div className="h-[400px] w-full bg-secondary/50 rounded-xl animate-pulse" />
       </div>
@@ -86,7 +86,7 @@ export default function IncidentsPage() {
 
   if (error) {
     return (
-      <div className="p-8 text-center text-destructive">
+      <div className="p-4 md:p-8 text-center text-destructive">
         <AlertTriangle size={48} className="mx-auto mb-4" />
         <p className="font-semibold text-lg">Failed to load incidents feed.</p>
         <p className="text-sm opacity-70 mt-1">Please ensure the backend server and MongoDB are running.</p>
@@ -95,7 +95,7 @@ export default function IncidentsPage() {
   }
 
   return (
-    <div className="p-8 space-y-6 relative h-full">
+    <div className="p-4 md:p-8 space-y-6 relative h-full">
       {/* Action Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Search & Filters */}
