@@ -31,11 +31,17 @@ def extract_face_embedding(image_base64: str) -> Optional[list]:
         faces = face_cascade.detectMultiScale(gray, 1.1, 4)
 
         if len(faces) == 0:
-            return None # No face detected
-
-        # Crop to the first detected face
-        x, y, w, h = faces[0]
-        face_crop = img[y:y+h, x:x+w]
+            # Fallback if Haar Cascade fails due to lighting/angle: use center 60% of image
+            h_img, w_img = img.shape[:2]
+            cx, cy = w_img // 2, h_img // 2
+            crop_w, crop_h = int(w_img * 0.6), int(h_img * 0.6)
+            x_pos = cx - crop_w // 2
+            y_pos = cy - crop_h // 2
+            face_crop = img[y_pos:y_pos+crop_h, x_pos:x_pos+crop_w]
+        else:
+            # Crop to the first detected face
+            x, y, w, h = faces[0]
+            face_crop = img[y:y+h, x:x+w]
 
         # Convert to HSV for better color histogram comparison
         hsv_face = cv2.cvtColor(face_crop, cv2.COLOR_BGR2HSV)
