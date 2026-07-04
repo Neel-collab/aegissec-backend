@@ -52,7 +52,7 @@ async def fetch_real_threats():
             threat = {
                 "id": str(uuid.uuid4()),
                 "title": title,
-                "type": threat_type,
+                "threat_type": threat_type,
                 "severity": severity,
                 "status": "Active",
                 "detected_at": datetime.utcnow(),
