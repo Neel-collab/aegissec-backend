@@ -29,3 +29,5 @@ services:
         value: oirndghmycgvpylu
       - key: FRONTEND_URL
         value: https://frontend-seven-roan-90.vercel.app
+      - key: GEMINI_API_KEY
+        sync: false

@@ -19,6 +19,7 @@ class Settings(BaseSettings):
 
     FRONTEND_URL: str = "http://localhost:5173"
     ENVIRONMENT: str = "development"
+    GEMINI_API_KEY: str = ""
 
     model_config = {"env_file": ".env"}
 
