@@ -79,5 +79,6 @@ async def send_otp_email(to_email: str, otp: str, purpose: str, user_name: str =
         print(f"[EMAIL] OTP sent to {to_email}")
         return True
     except Exception as e:
-        print(f"[EMAIL ERROR] Failed to send to {to_email}: {e}")
-        return False
+        err_msg = str(e)
+        print(f"[EMAIL ERROR] Failed to send to {to_email}: {err_msg}")
+        return err_msg

@@ -82,9 +82,9 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             {"id": user["id"]},
             {"$set": {"otp_hash": otp_hash, "otp_created_at": datetime.utcnow(), "otp_purpose": "mfa"}}
         )
-        success = await send_otp_email(user["email"], otp, "mfa", user["full_name"])
-        if not success:
-            raise HTTPException(status_code=500, detail="Failed to send verification email. Please ensure the email address is valid or try again later.")
+        result = await send_otp_email(user["email"], otp, "mfa", user["full_name"])
+        if result is not True:
+            raise HTTPException(status_code=500, detail=f"Failed to send verification email. Error: {result}")
         return Token(access_token="", token_type="bearer", requires_mfa=True, user_id=user["id"])
 
     token = create_access_token(subject=user["id"])
@@ -126,9 +126,9 @@ async def forgot_password(data: ForgotPasswordRequest):
         {"id": user["id"]},
         {"$set": {"otp_hash": otp_hash, "otp_created_at": datetime.utcnow(), "otp_purpose": "password_reset"}}
     )
-    success = await send_otp_email(user["email"], otp, "password_reset", user["full_name"])
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to send password reset email. Please try again later.")
+    result = await send_otp_email(user["email"], otp, "password_reset", user["full_name"])
+    if result is not True:
+        raise HTTPException(status_code=500, detail=f"Failed to send password reset email. Error: {result}")
     return {"message": "OTP sent to your email", "user_id": user["id"]}
 
 
