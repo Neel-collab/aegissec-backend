@@ -7,9 +7,15 @@ import contextlib
 from api import auth, incidents, ai, threats, assets, compliance, dashboard, assistant
 
 
+from services.threat_intel import fetch_real_threats
+
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
     await connect_to_mongo()
+    try:
+        await fetch_real_threats()
+    except Exception as e:
+        print(f"Failed to fetch threat intel: {e}")
     yield
     await close_mongo_connection()
 

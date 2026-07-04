@@ -14,3 +14,5 @@ opencv-python-headless
 Pillow>=11.0.0
 numpy>=2.1.0
 scikit-learn>=1.5.0
+feedparser==6.0.11
+google-generativeai==0.8.4
