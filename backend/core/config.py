@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     GEMINI_API_KEY: str = ""
     RESEND_API_KEY: str = ""
+    GROQ_API_KEY: str = ""
 
     model_config = {"env_file": ".env"}
 

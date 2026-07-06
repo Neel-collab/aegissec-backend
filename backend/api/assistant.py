@@ -4,7 +4,7 @@ from typing import List
 from db.mongodb import get_db
 from datetime import datetime
 from core.config import settings
-import google.generativeai as genai
+from groq import Groq
 
 router = APIRouter()
 
@@ -34,15 +34,13 @@ async def chat(request: ChatRequest):
     db = get_db()
     ctx = await _query_db_context(db)
     
-    if not settings.GEMINI_API_KEY:
+    if not settings.GROQ_API_KEY:
         return {
-            "response": "Error: GEMINI_API_KEY is not configured in the environment. Please configure it to use the AI Assistant.",
+            "response": "Error: GROQ_API_KEY is not configured in the environment. Please configure it to use the AI Assistant.",
             "timestamp": datetime.utcnow().isoformat()
         }
 
-    genai.configure(api_key=settings.GEMINI_API_KEY)
-    
-    model = genai.GenerativeModel('gemini-2.0-flash')
+    client = Groq(api_key=settings.GROQ_API_KEY)
     
     system_prompt = f"""You are the AegisSec AI Cybersecurity Assistant, an elite AI designed to train employees and provide expert cybersecurity advice.
     You have access to any and every data of cybersecurity available in the world. Answer questions professionally, clearly, and thoroughly.
@@ -56,30 +54,27 @@ async def chat(request: ChatRequest):
     Always encourage security best practices.
     """
     
-    # Extract the last user message and build history
-    user_message = request.messages[-1].message if request.messages else ""
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    # Build conversation history
+    for msg in request.messages:
+        # Map user/assistant roles (frontend sends user/assistant)
+        role = "assistant" if msg.role == "assistant" else "user"
+        messages.append({"role": role, "content": msg.message})
     
     try:
-        chat_session = model.start_chat(history=[])
-        chat_session.send_message(system_prompt)
+        completion = client.chat.completions.create(
+            model="llama3-8b-8192",
+            messages=messages,
+            temperature=0.7,
+            max_tokens=1024,
+            top_p=1,
+        )
         
-        # Send any prior conversation history for context
-        for msg in request.messages[:-1]:
-            chat_session.send_message(msg.message)
-        
-        response = chat_session.send_message(user_message)
-        
-        return {"response": response.text, "timestamp": datetime.utcnow().isoformat()}
+        return {"response": completion.choices[0].message.content, "timestamp": datetime.utcnow().isoformat()}
     except Exception as e:
         error_msg = str(e)
         print(f"[AI ASSISTANT ERROR] {error_msg}")
-        
-        if "429" in error_msg and "limit: 0" in error_msg:
-            return {
-                "response": "⚠️ **API Quota Error**: Your Google Gemini API key has a quota limit of 0. This usually happens because the Free Tier is not available in your country (e.g. UK/EU). To use the assistant, please go to **Google AI Studio**, enable a billing account, and try again.",
-                "timestamp": datetime.utcnow().isoformat()
-            }
-            
         return {
             "response": f"I encountered an error connecting to the intelligence network. Please try again. Error: {error_msg}",
             "timestamp": datetime.utcnow().isoformat()
