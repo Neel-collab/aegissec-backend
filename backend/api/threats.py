@@ -26,7 +26,16 @@ async def get_threats(
 
     cursor = db["threats"].find(query).sort("detected_at", -1).limit(limit)
     threats = await cursor.to_list(length=limit)
-    return [ThreatResponse(**t) for t in threats]
+    result = []
+    for t in threats:
+        # Normalize old docs that used "type" instead of "threat_type"
+        if "threat_type" not in t and "type" in t:
+            t["threat_type"] = t["type"]
+        try:
+            result.append(ThreatResponse(**t))
+        except Exception:
+            pass  # Skip malformed documents
+    return result
 
 
 @router.get("/stats/summary")
