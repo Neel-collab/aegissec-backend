@@ -1,7 +1,6 @@
-import aiosmtplib
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
+import resend
 from core.config import settings
+import asyncio
 
 
 def _build_otp_html(otp: str, purpose: str, user_name: str = "User") -> str:
@@ -50,35 +49,35 @@ def _build_otp_html(otp: str, purpose: str, user_name: str = "User") -> str:
     </html>
     """
 
+def _send_resend_sync(to_email: str, subject: str, html_body: str):
+    resend.api_key = settings.RESEND_API_KEY
+    
+    # Resend requires a verified domain. Since users might just be testing without a verified domain,
+    # "onboarding@resend.dev" can send to the user's registered email address.
+    from_email = "onboarding@resend.dev"
+    
+    r = resend.Emails.send({
+        "from": f"AegisSec Security <{from_email}>",
+        "to": [to_email],
+        "subject": subject,
+        "html": html_body
+    })
+    return r
 
-async def send_otp_email(to_email: str, otp: str, purpose: str, user_name: str = "User") -> bool:
-    """Send an OTP email via Gmail SMTP. Returns True on success."""
-    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
-        print(f"[EMAIL] SMTP not configured. OTP for {to_email}: {otp}")
+async def send_otp_email(to_email: str, otp: str, purpose: str, user_name: str = "User"):
+    """Send an OTP email via Resend HTTP API. Returns True on success, or err string on failure."""
+    if not settings.RESEND_API_KEY:
+        print(f"[EMAIL] RESEND API KEY not configured. OTP for {to_email}: {otp}")
         return True  # Graceful fallback in dev
 
     subject = "AegisSec — Your Verification Code" if purpose == "mfa" else "AegisSec — Password Reset Code"
-
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = f"AegisSec Security <{settings.SMTP_USER}>"
-    msg["To"] = to_email
-
     html_body = _build_otp_html(otp, purpose, user_name)
-    msg.attach(MIMEText(html_body, "html"))
 
     try:
-        await aiosmtplib.send(
-            msg,
-            hostname=settings.SMTP_HOST,
-            port=settings.SMTP_PORT,
-            username=settings.SMTP_USER,
-            password=settings.SMTP_PASSWORD,
-            start_tls=True,
-        )
-        print(f"[EMAIL] OTP sent to {to_email}")
+        await asyncio.to_thread(_send_resend_sync, to_email, subject, html_body)
+        print(f"[EMAIL] OTP sent to {to_email} via Resend")
         return True
     except Exception as e:
         err_msg = str(e)
-        print(f"[EMAIL ERROR] Failed to send to {to_email}: {err_msg}")
+        print(f"[EMAIL ERROR] Failed to send to {to_email} via Resend: {err_msg}")
         return err_msg
