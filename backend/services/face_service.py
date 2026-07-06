@@ -2,6 +2,7 @@ import base64
 import os
 import numpy as np
 import cv2
+from typing import Optional
 
 def extract_face_embedding(image_base64: str) -> Optional[list]:
     """
