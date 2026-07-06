@@ -15,10 +15,11 @@ export default function AssistantPage() {
 
   const chatMutation = useMutation({
     mutationFn: async ({ msg, history }: { msg: string, history: any[] }) => {
-      const formattedHistory = history.map(m => ({ role: m.role, message: m.text }))
-      const res = await aiAPI.chat(msg, formattedHistory)
-      return res.data
-    },
+        const formattedHistory = history.map(m => ({ role: m.role, message: m.text }));
+        const payload = [...formattedHistory, { role: 'user', message: msg }];
+        const res = await aiAPI.chat(payload);
+        return res;
+      },
     onSuccess: (data) => {
       setMessages(prev => [...prev, { role: 'assistant', text: data.response, time: new Date() }])
     },
