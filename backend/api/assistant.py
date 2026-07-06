@@ -71,9 +71,18 @@ async def chat(request: ChatRequest):
         
         return {"response": response.text, "timestamp": datetime.utcnow().isoformat()}
     except Exception as e:
-        print(f"[AI ASSISTANT ERROR] {e}")
+        error_msg = str(e)
+        print(f"[AI ASSISTANT ERROR] {error_msg}")
+        
+        if "429" in error_msg and "limit: 0" in error_msg:
+            return {
+                "response": "⚠️ **API Quota Error**: Your Google Gemini API key has a quota limit of 0. This usually happens because the Free Tier is not available in your country (e.g. UK/EU). To use the assistant, please go to **Google AI Studio**, enable a billing account, and try again.",
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
         return {
-            "response": f"I encountered an error connecting to the intelligence network. Please try again. Error: {str(e)}",
+            "response": f"I encountered an error connecting to the intelligence network. Please try again. Error: {error_msg}",
             "timestamp": datetime.utcnow().isoformat()
         }
+
 
