@@ -40,7 +40,7 @@ export const authAPI = {
   verifyMFA: async (userId: string, code: string): APIResponse => {
     const response = await api.post('/api/v1/auth/verify-mfa', {
       user_id: userId,
-      code,
+      otp: code,
     });
     return response.data;
   },
