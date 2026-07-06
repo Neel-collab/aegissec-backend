@@ -8,14 +8,16 @@ from api import auth, incidents, ai, threats, assets, compliance, dashboard, ass
 
 
 from services.threat_intel import fetch_real_threats
+from services.real_data import populate_real_data
 
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
     await connect_to_mongo()
     try:
         await fetch_real_threats()
+        await populate_real_data()
     except Exception as e:
-        print(f"Failed to fetch threat intel: {e}")
+        print(f"Failed to fetch threat intel or real data: {e}")
     yield
     await close_mongo_connection()
 
