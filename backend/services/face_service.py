@@ -1,30 +1,26 @@
 import base64
 import os
-import tempfile
-import uuid
-from typing import Optional
 import numpy as np
 import cv2
 
 def extract_face_embedding(image_base64: str) -> Optional[list]:
     """
-    Decode base64 image, detect face using lightweight Haar Cascades,
-    and return a color histogram as the embedding vector.
-    This guarantees no Out-of-Memory crashes on cloud free tiers.
+    Decode base64 image, take a center crop of the face, and extract
+    HOG (Histogram of Oriented Gradients) features. HOG captures the actual
+    structural shape of the face (eyes, nose, jawline) rather than just color,
+    preventing imposters from logging in just by being in the same lighting.
     """
-    tmp_path = None
     try:
         if "," in image_base64:
             image_base64 = image_base64.split(",", 1)[1]
 
         img_bytes = base64.b64decode(image_base64)
         nparr = np.frombuffer(img_bytes, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        img = cv2.imdecode(nparr, cv2.IMREAD_GRAYSCALE) # Grayscale for structure
         
         if img is None: return None
 
-        # For extreme cloud-free-tier compatibility, we bypass heavy Face Detectors.
-        # We take a 60% center crop of the image (where the user's face is naturally positioned)
+        # Take a 60% center crop (the bounding box where the face sits in the UI)
         h_img, w_img = img.shape[:2]
         cx, cy = w_img // 2, h_img // 2
         crop_w, crop_h = int(w_img * 0.6), int(h_img * 0.6)
@@ -32,14 +28,28 @@ def extract_face_embedding(image_base64: str) -> Optional[list]:
         y_pos = cy - crop_h // 2
         face_crop = img[y_pos:y_pos+crop_h, x_pos:x_pos+crop_w]
 
-        # Convert to HSV for better color histogram comparison
-        hsv_face = cv2.cvtColor(face_crop, cv2.COLOR_BGR2HSV)
+        # Standardize size for HOG (must be a fixed size)
+        face_resized = cv2.resize(face_crop, (128, 128))
         
-        # Calculate 3D histogram (Hue, Saturation, Value)
-        hist = cv2.calcHist([hsv_face], [0, 1, 2], None, [8, 8, 8], [0, 180, 0, 256, 0, 256])
-        cv2.normalize(hist, hist)
+        # Initialize HOG descriptor
+        hog = cv2.HOGDescriptor(
+            _winSize=(128, 128),
+            _blockSize=(16, 16),
+            _blockStride=(8, 8),
+            _cellSize=(8, 8),
+            _nbins=9
+        )
         
-        return hist.flatten().tolist()
+        # Compute HOG features
+        hog_features = hog.compute(face_resized)
+        
+        # Flatten and normalize the feature vector
+        hog_features = hog_features.flatten()
+        norm = np.linalg.norm(hog_features)
+        if norm > 0:
+            hog_features = hog_features / norm
+            
+        return hog_features.tolist()
 
     except Exception as e:
         print(f"[FACE] extract_face_embedding error: {e}")
@@ -48,30 +58,30 @@ def extract_face_embedding(image_base64: str) -> Optional[list]:
 
 def verify_face(image_base64: str, stored_embedding: list) -> tuple[bool, float]:
     """
-    Compare face in image against stored histogram embedding.
-    Returns (is_match, confidence_score).
+    Compare new HOG embedding against stored embedding using Cosine Similarity.
     """
     try:
         new_embedding = extract_face_embedding(image_base64)
         if new_embedding is None:
             return False, 0.0
 
-        arr_new = np.array(new_embedding, dtype=np.float32)
-        arr_stored = np.array(stored_embedding, dtype=np.float32)
+        vec_new = np.array(new_embedding, dtype=np.float32)
+        vec_stored = np.array(stored_embedding, dtype=np.float32)
 
-        # Compare using Bhattacharyya distance (lower is better, 0 is exact match, 1 is mismatch)
-        distance = cv2.compareHist(arr_new, arr_stored, cv2.HISTCMP_BHATTACHARYYA)
+        # Cosine Similarity (1.0 is exact match, 0.0 is completely different)
+        similarity = np.dot(vec_new, vec_stored)
         
-        # Threshold for match (0.68 balances between the user's camera lighting and rejecting other people)
-        threshold = 0.68
-        is_match = distance <= threshold
+        # HOG Cosine Similarity threshold for faces
+        # 0.70 to 0.85 is a typical sweet spot depending on strictness
+        threshold = 0.75 
+        is_match = similarity >= threshold
         
         if is_match:
-            score = 100.0 - ((distance / threshold) * 15.0)
+            score = 80.0 + ((similarity - threshold) / (1.0 - threshold) * 20.0)
         else:
-            score = max(0.0, 85.0 - ((distance - threshold) * 50.0))
+            score = max(0.0, (similarity / threshold) * 79.0)
             
-        return is_match, round(score, 2)
+        return bool(is_match), round(score, 2)
 
     except Exception as e:
         print(f"[FACE] verify_face error: {e}")
