@@ -72,8 +72,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const refreshUser = async () => {
-    if (!token) return;
-    const me = await authAPI.getMe(token);
+    const activeToken = token || localStorage.getItem('authToken');
+    if (!activeToken) return;
+    const me = await authAPI.getMe(activeToken);
     setUser(me);
     setIsAuthenticated(true);
   };
