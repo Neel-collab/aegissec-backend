@@ -62,14 +62,14 @@ def verify_face(image_base64: str, stored_embedding: list) -> tuple[bool, float]
         # Compare using Bhattacharyya distance (lower is better, 0 is exact match, 1 is mismatch)
         distance = cv2.compareHist(arr_new, arr_stored, cv2.HISTCMP_BHATTACHARYYA)
         
-        # Threshold for match (0.75 is forgiving for lighting/angle variations)
-        threshold = 0.75
+        # Threshold for match (0.68 balances between the user's camera lighting and rejecting other people)
+        threshold = 0.68
         is_match = distance <= threshold
         
         if is_match:
-            score = 100.0 - ((distance / threshold) * 20.0)
+            score = 100.0 - ((distance / threshold) * 15.0)
         else:
-            score = max(0.0, 80.0 - ((distance - threshold) * 50.0))
+            score = max(0.0, 85.0 - ((distance - threshold) * 50.0))
             
         return is_match, round(score, 2)
 
