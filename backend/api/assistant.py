@@ -42,7 +42,7 @@ async def chat(request: ChatRequest):
 
     genai.configure(api_key=settings.GEMINI_API_KEY)
     
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.0-flash')
     
     system_prompt = f"""You are the AegisSec AI Cybersecurity Assistant, an elite AI designed to train employees and provide expert cybersecurity advice.
     You have access to any and every data of cybersecurity available in the world. Answer questions professionally, clearly, and thoroughly.
