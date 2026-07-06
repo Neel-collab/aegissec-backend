@@ -70,7 +70,7 @@ export default function FaceLoginPage() {
 
       const res = await authAPI.faceLogin(email, base64Image)
       setStatus('success')
-      setToken(res.data.access_token)
+      setToken(res.access_token)
       await refreshUser()
       stopCamera()
       setTimeout(() => {

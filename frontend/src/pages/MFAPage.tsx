@@ -46,7 +46,7 @@ export default function MFAPage() {
     setError(''); setLoading(true)
     try {
       const res = await authAPI.verifyMFA(user_id, pin)
-      setToken(res.data.access_token)
+      setToken(res.access_token) // res is already response.data
       await refreshUser()
       navigate('/')
     } catch (err: any) {
