@@ -62,8 +62,8 @@ def verify_face(image_base64: str, stored_embedding: list) -> tuple[bool, float]
         # Compare using Bhattacharyya distance (lower is better, 0 is exact match, 1 is mismatch)
         distance = cv2.compareHist(arr_new, arr_stored, cv2.HISTCMP_BHATTACHARYYA)
         
-        # Threshold for match
-        threshold = 0.65
+        # Threshold for match (0.75 is forgiving for lighting/angle variations)
+        threshold = 0.75
         is_match = distance <= threshold
         
         if is_match:
