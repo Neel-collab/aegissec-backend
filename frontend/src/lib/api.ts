@@ -113,7 +113,10 @@ export const complianceAPI = {
 
 // AI Assistant API
 export const aiAPI = {
-  chat: async (messages: any[]): APIResponse => api.post('/api/v1/assistant/chat', { messages }),
+  chat: async (messages: any[]): APIResponse => {
+    const response = await api.post('/api/v1/assistant/chat', { messages });
+    return response.data;
+  },
   analyzeURL: async (url: string): APIResponse => api.post('/api/v1/threats/analyze-url', { url }),
   analyzeNetwork: async (data: any[]): APIResponse => api.post('/api/v1/threats/analyze-network', { data }),
 };

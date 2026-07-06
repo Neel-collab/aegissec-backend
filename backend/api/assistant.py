@@ -8,9 +8,12 @@ import google.generativeai as genai
 
 router = APIRouter()
 
-class ChatRequest(BaseModel):
+class ChatMessage(BaseModel):
+    role: str
     message: str
-    history: List[dict] = []
+
+class ChatRequest(BaseModel):
+    messages: List[ChatMessage]
 
 async def _query_db_context(db) -> dict:
     active_threats = await db["threats"].count_documents({"status": "Active"})
@@ -32,7 +35,6 @@ async def chat(request: ChatRequest):
     ctx = await _query_db_context(db)
     
     if not settings.GEMINI_API_KEY:
-        # Fallback if API key is not configured
         return {
             "response": "Error: GEMINI_API_KEY is not configured in the environment. Please configure it to use the AI Assistant.",
             "timestamp": datetime.utcnow().isoformat()
@@ -40,10 +42,8 @@ async def chat(request: ChatRequest):
 
     genai.configure(api_key=settings.GEMINI_API_KEY)
     
-    # Initialize the Generative Model
     model = genai.GenerativeModel('gemini-1.5-flash')
     
-    # Build System Context
     system_prompt = f"""You are the AegisSec AI Cybersecurity Assistant, an elite AI designed to train employees and provide expert cybersecurity advice.
     You have access to any and every data of cybersecurity available in the world. Answer questions professionally, clearly, and thoroughly.
     
@@ -56,14 +56,18 @@ async def chat(request: ChatRequest):
     Always encourage security best practices.
     """
     
+    # Extract the last user message and build history
+    user_message = request.messages[-1].message if request.messages else ""
+    
     try:
-        # Generate response
-        chat = model.start_chat(history=[])
-        # Send system prompt as initial context
-        chat.send_message(system_prompt)
+        chat_session = model.start_chat(history=[])
+        chat_session.send_message(system_prompt)
         
-        # Send the actual user message
-        response = chat.send_message(request.message)
+        # Send any prior conversation history for context
+        for msg in request.messages[:-1]:
+            chat_session.send_message(msg.message)
+        
+        response = chat_session.send_message(user_message)
         
         return {"response": response.text, "timestamp": datetime.utcnow().isoformat()}
     except Exception as e:
@@ -72,3 +76,4 @@ async def chat(request: ChatRequest):
             "response": f"I encountered an error connecting to the intelligence network. Please try again. Error: {str(e)}",
             "timestamp": datetime.utcnow().isoformat()
         }
+
