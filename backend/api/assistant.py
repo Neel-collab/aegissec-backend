@@ -21,7 +21,7 @@ async def _query_db_context(db) -> dict:
     open_incidents = await db["incidents"].count_documents({"status": "Open"})
     recent_cursor = db["threats"].find({"status": "Active"}).sort("detected_at", -1).limit(3)
     recent = await recent_cursor.to_list(3)
-    recent_names = [f"{t['title']} ({t['severity']})" for t in recent]
+    recent_names = [f"{t.get('title', 'Unknown Threat')} ({t.get('severity', 'Unknown')})" for t in recent]
     return {
         "active_threats": active_threats,
         "critical_threats": critical,
