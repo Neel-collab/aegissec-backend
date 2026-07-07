@@ -42,12 +42,18 @@ async def populate_real_data():
                 'description': entry.get('description', '')[:200] + '...',
                 'severity': 'High',
                 'status': 'Open',
-                'reported_at': datetime.utcnow(),
+                'created_at': datetime.utcnow(),
                 'updated_at': datetime.utcnow(),
                 'source': 'RealNews'
             })
         if incidents:
             await db['incidents'].insert_many(incidents)
+            
+    # Fix existing bad data from previous run
+    await db['incidents'].update_many(
+        {"created_at": {"$exists": False}, "reported_at": {"$exists": True}},
+        [{"$set": {"created_at": "$reported_at"}}]
+    )
     
     # 3. Real Compliance (Server Audit)
     comp_count = await db['compliance'].count_documents({'framework': 'Server Baseline Audit'})

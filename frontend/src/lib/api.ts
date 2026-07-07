@@ -99,8 +99,6 @@ export const dashboardAPI = {
 // Threats API
 export const threatsAPI = {
   getAll: async (): APIResponse => api.get('/api/v1/threats'),
-  analyzeURL: async (url: string): APIResponse => api.post('/api/v1/threats/analyze-url', { url }),
-  analyzeNetwork: async (data: any[]): APIResponse => api.post('/api/v1/threats/analyze-network', { data }),
 };
 
 // Compliance API
@@ -117,6 +115,6 @@ export const aiAPI = {
     const response = await api.post('/api/v1/assistant/chat', { messages });
     return response.data;
   },
-  analyzeURL: async (url: string): APIResponse => api.post('/api/v1/threats/analyze-url', { url }),
-  analyzeNetwork: async (data: any[]): APIResponse => api.post('/api/v1/threats/analyze-network', { data }),
+  analyzeURL: async (url: string): APIResponse => api.post('/api/v1/ai/analyze-url', { url }),
+  analyzeNetwork: async (features: number[]): APIResponse => api.post('/api/v1/ai/analyze-network', { features }),
 };
